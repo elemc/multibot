@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/go-pg/pg"
+	"github.com/go-pg/pg/orm"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/telegram-bot-api.v4"
 )
@@ -102,4 +103,16 @@ func (ctx *MultiBotContext) saveTextToFileAndGetName(msgText string) string {
 		return ""
 	}
 	return f.Name()
+}
+
+// DBCreateTable create table in database by struct
+func (ctx *MultiBotContext) DBCreateTable(data interface{}) (err error) {
+	err = ctx.db.CreateTable(data, &orm.CreateTableOptions{IfNotExists: true})
+	return
+}
+
+// DBInsert insert data to database
+func (ctx *MultiBotContext) DBInsert(data interface{}) (err error) {
+	err = ctx.db.Insert(data)
+	return
 }

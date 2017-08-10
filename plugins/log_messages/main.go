@@ -2,6 +2,7 @@ package main
 
 import (
 	"multibot/context"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/telegram-bot-api.v4"
@@ -9,10 +10,18 @@ import (
 
 var ctx *context.MultiBotContext
 
+type Log struct {
+	Timestamp time.Time
+	Message   *tgbotapi.Message
+	Text      string
+}
+
 // InitPlugin initialize plugin if it needed
-func InitPlugin(mbc *context.MultiBotContext) error {
+func InitPlugin(mbc *context.MultiBotContext) (err error) {
 	ctx = mbc
-	return nil
+
+	err = ctx.DBCreateTable(&Log{})
+	return
 }
 
 // GetName function returns plugin name
@@ -33,8 +42,13 @@ func GetCommands() []string {
 // UpdateHandler function call for each update
 func UpdateHandler(update tgbotapi.Update) (err error) {
 	log.Debugf("%s", update.Message.Text)
-	ctx.SendMessage(update.Message.Chat.ID, "Thanks", update.Message.MessageID)
-	return nil
+	l := Log{
+		Timestamp: time.Now(),
+		Message:   update.Message,
+		Text:      update.Message.Text,
+	}
+	err = ctx.DBInsert(&l)
+	return
 }
 
 // RunCommand handler start if bot get one of commands

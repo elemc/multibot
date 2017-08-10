@@ -14,6 +14,7 @@ var (
 	ctx *context.MultiBotContext
 )
 
+
 // InitPlugin initialize plugin if it needed
 func InitPlugin(c *context.MultiBotContext) (err error) {
 	ctx = c

@@ -17,8 +17,8 @@ deps:
 subdirs: bin_plugins $(PLUGINS)
 
 $(PLUGINS):
-	$(MAKE) -C plugins/$@
-	$(MAKE) -C plugins/$@ install
+	@$(MAKE) -C plugins/$@
+	@$(MAKE) -C plugins/$@ install
 
 bin_plugins:
 	@install -m 0755 -d bin_plugins
