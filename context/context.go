@@ -39,27 +39,37 @@ func InitContext(db *pg.DB, bot *tgbotapi.BotAPI, options *Options) *MultiBotCon
 	return mbc
 }
 
-// SendMessage send message from bot to chat with ID == chatID and text
+// SendMessageText send message from bot to chat with ID == chatID and text
 // if replyID != 0 message send as reply
-func (ctx *MultiBotContext) SendMessage(chatID int64, text string, replyID int) {
+func (ctx *MultiBotContext) SendMessageText(chatID int64, text string, replyID int) {
+	ctx.sendMessage(chatID, text, replyID, "")
+}
+
+// SendMessageMarkdown send message from bot to chat with ID == chatID and text
+// if replyID != 0 message send as reply
+func (ctx *MultiBotContext) SendMessageMarkdown(chatID int64, text string, replyID int) {
+	ctx.sendMessage(chatID, text, replyID, "Markdown")
+}
+
+func (ctx *MultiBotContext) sendMessage(chatID int64, text string, replyID int, parseMode string) {
 	var (
 		err error
 	)
 
 	if len(text) > telegramMaximumMessageSize {
 		log.Debugf("Message to big, size %d, send as file", len(text))
-		ctx.SendMessage(chatID, "* Сообщение слишком большое. Текст будет отправлен в виде файла! *", replyID)
+		ctx.SendMessageMarkdown(chatID, "* Сообщение слишком большое. Текст будет отправлен в виде файла! *", replyID)
 		filename := ctx.saveTextToFileAndGetName(text)
 		ctx.SendFile(chatID, replyID, filename, "text/plain")
 		return
 	}
 
 	msg := tgbotapi.NewMessage(chatID, text)
-	msg.ParseMode = "Markdown"
+	msg.ParseMode = parseMode
 	if replyID != 0 {
 		msg.ReplyToMessageID = replyID
 	}
-	if _, err = ctx.bot.Send(msg); err != nil {
+	if _, err = ctx.bot.Send(msg); err != nil && parseMode != "" {
 		// oops, try to send as plain text
 		log.Warnf("oops, unable to send markdown message [%s]: %s. Try to send as plain text.", text, err)
 		msg.ParseMode = ""
@@ -67,6 +77,8 @@ func (ctx *MultiBotContext) SendMessage(chatID int64, text string, replyID int) 
 			log.Errorf("Unable to send message to %d with text [%s] and reply [%d]: %s", chatID, text, replyID, err)
 			return
 		}
+	} else if err != nil {
+		log.Errorf("Unable to send plain message [%s]: %s", text, err)
 	}
 }
 
@@ -109,6 +121,11 @@ func (ctx *MultiBotContext) saveTextToFileAndGetName(msgText string) string {
 func (ctx *MultiBotContext) DBCreateTable(data interface{}) (err error) {
 	err = ctx.db.CreateTable(data, &orm.CreateTableOptions{IfNotExists: true})
 	return
+}
+
+// GetDB return database pointer
+func (ctx *MultiBotContext) GetDB() *pg.DB {
+	return ctx.db
 }
 
 // DBInsert insert data to database

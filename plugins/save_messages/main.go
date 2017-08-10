@@ -14,7 +14,6 @@ var (
 	ctx *context.MultiBotContext
 )
 
-
 // InitPlugin initialize plugin if it needed
 func InitPlugin(c *context.MultiBotContext) (err error) {
 	ctx = c
@@ -45,7 +44,6 @@ func UpdateHandler(update tgbotapi.Update) (err error) {
 	}
 	defer f.Close()
 	_, err = f.WriteString(fmt.Sprintf("%s\t-\t%s\n", update.Message.From.String(), update.Message.Text))
-	ctx.SendFile(update.Message.Chat.ID, update.Message.MessageID, "qwe.txt", "text/plain")
 	return nil
 }
 
@@ -68,7 +66,7 @@ func runShowFile(chatID int64) (err error) {
 	if data, err = ioutil.ReadAll(f); err != nil {
 		return
 	}
-	ctx.SendMessage(chatID, string(data), 0)
+	ctx.SendMessageText(chatID, string(data), 0)
 	return
 }
 
