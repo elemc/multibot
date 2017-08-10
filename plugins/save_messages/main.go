@@ -70,3 +70,8 @@ func runShowFile(chatID int64) (err error) {
 	ctx.SendMessage(chatID, string(data), 0)
 	return
 }
+
+// StartCommand handler start if bot get one command 'start'
+func StartCommand(update tgbotapi.Update) (err error) {
+	return
+}

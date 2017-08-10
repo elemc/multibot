@@ -1,7 +1,8 @@
 PROJECT_NAME:=multibot
 GO_GET:=go get
+PLUGINS:=log_messages save_messages template
 
-all: multibot bin_plugins/log_messages.so bin_plugins/save_messages.so
+all: multibot subdirs
 
 multibot: deps
 	@echo "Building ${PROJECT_NAME}"
@@ -13,13 +14,15 @@ deps:
 	${GO_GET} github.com/spf13/viper
 	${GO_GET} github.com/go-pg/pg
 
-bin_plugins/log_messages.so: bin_plugins
-	@echo "Building plugin: log_messages..."
-	@go build -buildmode=plugin -o bin_plugins/log_messages.so plugins/log_messages/main.go
+subdirs: bin_plugins $(PLUGINS)
 
-bin_plugins/save_messages.so: bin_plugins
-	@echo "Building plugin: save_messages..."
-	@go build -buildmode=plugin -o bin_plugins/save_messages.so plugins/save_messages/main.go
+$(PLUGINS):
+	$(MAKE) -C plugins/$@
+	$(MAKE) -C plugins/$@ install
 
 bin_plugins:
 	@install -m 0755 -d bin_plugins
+
+clean:
+	@rm -rf bin_plugins
+	@rm -rf ${PROJECT_NAME}
