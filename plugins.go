@@ -15,11 +15,12 @@ import (
 
 // BotPlugin struct for store one plugin
 type BotPlugin struct {
-	Name              string
-	Description       string
-	Commands          []string
-	EachUpdateHandler func(tgbotapi.Update) error
-	RunCommandHandler func(string, tgbotapi.Update) error
+	Name                string
+	Description         string
+	Commands            []string
+	EachUpdateHandler   func(tgbotapi.Update) error
+	RunCommandHandler   func(string, tgbotapi.Update) error
+	StartCommandHandler func(tgbotapi.Update) error
 }
 
 var (
@@ -45,13 +46,14 @@ func LoadPlugins() (err error) {
 		fullPath := filepath.Join(options.PluginDir, pluginFile.Name())
 
 		var (
-			p                 *plugin.Plugin
-			initPlugin        plugin.Symbol
-			getName           plugin.Symbol
-			getDescription    plugin.Symbol
-			getCommands       plugin.Symbol
-			updateHandler     plugin.Symbol
-			runCommandHandler plugin.Symbol
+			p                   *plugin.Plugin
+			initPlugin          plugin.Symbol
+			getName             plugin.Symbol
+			getDescription      plugin.Symbol
+			getCommands         plugin.Symbol
+			updateHandler       plugin.Symbol
+			runCommandHandler   plugin.Symbol
+			startCommandHandler plugin.Symbol
 		)
 		if p, err = plugin.Open(fullPath); err != nil {
 			return
@@ -78,13 +80,17 @@ func LoadPlugins() (err error) {
 		if runCommandHandler, err = p.Lookup("RunCommand"); err != nil {
 			return
 		}
+		if startCommandHandler, err = p.Lookup("StartCommand"); err != nil {
+			return
+		}
 
 		botPlugin := &BotPlugin{
-			Name:              getName.(func() string)(),
-			Description:       getDescription.(func() string)(),
-			Commands:          getCommands.(func() []string)(),
-			EachUpdateHandler: updateHandler.(func(tgbotapi.Update) error),
-			RunCommandHandler: runCommandHandler.(func(string, tgbotapi.Update) error),
+			Name:                getName.(func() string)(),
+			Description:         getDescription.(func() string)(),
+			Commands:            getCommands.(func() []string)(),
+			EachUpdateHandler:   updateHandler.(func(tgbotapi.Update) error),
+			RunCommandHandler:   runCommandHandler.(func(string, tgbotapi.Update) error),
+			StartCommandHandler: startCommandHandler.(func(tgbotapi.Update) error),
 		}
 		if _, ok := botPlugins[botPlugin.Name]; ok {
 			return fmt.Errorf("plugin %s already exists", botPlugin.Name)

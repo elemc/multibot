@@ -28,7 +28,11 @@ func BotServe() (err error) {
 		go botEachUpdateHandler(update)
 
 		if update.Message.Command() != "" {
-			go botCommandsHandler(update)
+			if update.Message.Command() == "start" {
+				go botStartHandler(update)
+			} else {
+				go botCommandsHandler(update)
+			}
 		}
 	}
 
@@ -48,6 +52,14 @@ func botCommandsHandler(update tgbotapi.Update) {
 	if botPlugin, ok := botPluginsByCommand[cmd]; ok {
 		if err := botPlugin.RunCommandHandler(cmd, update); err != nil {
 			log.Errorf("Unable to run command '%s' for plugin '%s': %s", cmd, botPlugin.Name, err)
+		}
+	}
+}
+
+func botStartHandler(update tgbotapi.Update) {
+	for name, botPlugin := range botPlugins {
+		if err := botPlugin.StartCommandHandler(update); err != nil {
+			log.Errorf("Unable to run command start for plugin '%s': %s", name, err)
 		}
 	}
 }

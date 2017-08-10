@@ -38,3 +38,8 @@ func UpdateHandler(update tgbotapi.Update) (err error) {
 func RunCommand(command string, update tgbotapi.Update) (err error) {
 	return
 }
+
+// StartCommand handler start if bot get one command 'start'
+func StartCommand(update tgbotapi.Update) (err error) {
+	return
+}
