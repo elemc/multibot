@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/go-pg/pg"
-	"github.com/labstack/gommon/log"
+	log "github.com/sirupsen/logrus"
 	"gopkg.in/telegram-bot-api.v4"
 )
 

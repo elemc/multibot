@@ -1,5 +1,5 @@
-PROJECT_NAME:=fwego
-GO_GET:="@go get"
+PROJECT_NAME:=multibot
+GO_GET:=go get
 
 all: multibot bin_plugins/log_messages.so bin_plugins/save_messages.so
 
@@ -11,15 +11,15 @@ deps:
 	${GO_GET} gopkg.in/telegram-bot-api.v4
 	${GO_GET} github.com/sirupsen/logrus
 	${GO_GET} github.com/spf13/viper
+	${GO_GET} github.com/go-pg/pg
 
-bin_plugins/log_messages.so:
-	@pushd plugins/log_messages
-	go build
-	install -m 0644 log_messages.so ../../bin_plugins/
-	@popd
+bin_plugins/log_messages.so: bin_plugins
+	@echo "Building plugin: log_messages..."
+	@go build -buildmode=plugin -o bin_plugins/log_messages.so plugins/log_messages/main.go
 
-bin_plugins/save_messages.so:
-	@pushd plugins/save_messages
-	go build
-	install -m 0644 save_messages.so ../../bin_plugins/
-	@popd
+bin_plugins/save_messages.so: bin_plugins
+	@echo "Building plugin: save_messages..."
+	@go build -buildmode=plugin -o bin_plugins/save_messages.so plugins/save_messages/main.go
+
+bin_plugins:
+	@install -m 0755 -d bin_plugins
