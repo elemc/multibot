@@ -14,12 +14,13 @@ const telegramMaximumMessageSize = 4096
 
 // Options is a type for store all application options
 type Options struct {
-	AppName   string
-	APIKey    string
-	PgSQLDSN  string
-	LogLevel  string
-	Debug     bool
-	PluginDir string
+	AppName         string
+	APIKey          string
+	PgSQLDSN        string
+	LogLevel        string
+	Debug           bool
+	PluginDir       string
+	PluginsSettings map[string]map[string]interface{}
 }
 
 // MultiBotContext is a struct with methods for interact bot with plugins
@@ -27,44 +28,49 @@ type MultiBotContext struct {
 	db      *pg.DB
 	bot     *tgbotapi.BotAPI
 	options *Options
+	log     *log.Logger
 }
 
 // InitContext initialize context and return it pointer
-func InitContext(db *pg.DB, bot *tgbotapi.BotAPI, options *Options) *MultiBotContext {
+func InitContext(db *pg.DB, bot *tgbotapi.BotAPI, options *Options, l *log.Logger) *MultiBotContext {
 	mbc := &MultiBotContext{
 		db:      db,
 		bot:     bot,
 		options: options,
+		log:     l,
 	}
 	return mbc
 }
 
 // SendMessageText send message from bot to chat with ID == chatID and text
 // if replyID != 0 message send as reply
-func (ctx *MultiBotContext) SendMessageText(chatID int64, text string, replyID int) {
-	ctx.sendMessage(chatID, text, replyID, "")
+func (ctx *MultiBotContext) SendMessageText(chatID int64, text string, replyID int, replyMarkup interface{}) {
+	ctx.sendMessage(chatID, text, replyID, "", replyMarkup)
 }
 
 // SendMessageMarkdown send message from bot to chat with ID == chatID and text
 // if replyID != 0 message send as reply
-func (ctx *MultiBotContext) SendMessageMarkdown(chatID int64, text string, replyID int) {
-	ctx.sendMessage(chatID, text, replyID, "Markdown")
+func (ctx *MultiBotContext) SendMessageMarkdown(chatID int64, text string, replyID int, replyMarkup interface{}) {
+	ctx.sendMessage(chatID, text, replyID, "Markdown", replyMarkup)
 }
 
-func (ctx *MultiBotContext) sendMessage(chatID int64, text string, replyID int, parseMode string) {
+func (ctx *MultiBotContext) sendMessage(chatID int64, text string, replyID int, parseMode string, replyMarkup interface{}) {
 	var (
 		err error
 	)
 
 	if len(text) > telegramMaximumMessageSize {
 		log.Debugf("Message to big, size %d, send as file", len(text))
-		ctx.SendMessageMarkdown(chatID, "* Сообщение слишком большое. Текст будет отправлен в виде файла! *", replyID)
+		ctx.SendMessageMarkdown(chatID, "* Сообщение слишком большое. Текст будет отправлен в виде файла! *", replyID, replyMarkup)
 		filename := ctx.saveTextToFileAndGetName(text)
 		ctx.SendFile(chatID, replyID, filename, "text/plain")
 		return
 	}
 
 	msg := tgbotapi.NewMessage(chatID, text)
+	if replyMarkup != nil {
+		msg.ReplyMarkup = replyMarkup
+	}
 	msg.ParseMode = parseMode
 	if replyID != 0 {
 		msg.ReplyToMessageID = replyID
@@ -126,6 +132,16 @@ func (ctx *MultiBotContext) DBCreateTable(data interface{}) (err error) {
 // GetDB return database pointer
 func (ctx *MultiBotContext) GetDB() *pg.DB {
 	return ctx.db
+}
+
+// Log return main log pointer
+func (ctx *MultiBotContext) Log() *log.Logger {
+	return ctx.log
+}
+
+// GetOptions return options pointer
+func (ctx *MultiBotContext) GetOptions(pluginName string) map[string]interface{} {
+	return ctx.options.PluginsSettings[pluginName]
 }
 
 // DBInsert insert data to database

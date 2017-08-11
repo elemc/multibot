@@ -44,7 +44,7 @@ func main() {
 		log.Fatalf("Unable to initialize telegram bot: %s", err)
 	}
 	log.Debug("Telegram bot initialized sucessful")
-	botContext = context.InitContext(db, bot, options)
+	botContext = context.InitContext(db, bot, options, log.StandardLogger())
 
 	if err = LoadPlugins(); err != nil {
 		log.Fatalf("Unable to load plugins: %s", err)

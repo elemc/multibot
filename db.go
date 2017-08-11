@@ -4,7 +4,6 @@ package main
 
 import (
 	"github.com/go-pg/pg"
-	"github.com/go-pg/pg/orm"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -21,17 +20,5 @@ func InitDatabase() (err error) {
 	}
 	log.Debugf("Try to connect to postgrsql server...")
 	db = pg.Connect(pgo)
-	err = createTables()
-	return
-}
-
-func createTables() (err error) {
-	tables := []interface{}{}
-
-	for _, t := range tables {
-		if err = db.CreateTable(t, &orm.CreateTableOptions{IfNotExists: true}); err != nil {
-			return
-		}
-	}
 	return
 }

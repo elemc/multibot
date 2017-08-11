@@ -64,7 +64,6 @@ func LoadPlugins() (err error) {
 		if err = initPlugin.(func(*context.MultiBotContext) error)(botContext); err != nil {
 			return
 		}
-
 		if getName, err = p.Lookup("GetName"); err != nil {
 			return
 		}
@@ -106,6 +105,8 @@ func LoadPlugins() (err error) {
 			log.Debugf("Set command \"%s\" for plugin \"%s\"", rcmd, botPlugin.Name)
 		}
 
+		// try to get plugins settings
+		loadPLuginConfig(botPlugin.Name)
 		log.Debugf("Loaded plugin: %s (%s)", botPlugin.Name, botPlugin.Description)
 	}
 
