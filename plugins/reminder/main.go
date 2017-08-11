@@ -1,11 +1,18 @@
 package main
 
 import (
+	"fmt"
 	"multibot/context"
 
 	log "github.com/sirupsen/logrus"
 
 	"gopkg.in/telegram-bot-api.v4"
+)
+
+const (
+	taskAddCommand  = "task_add"
+	taskDelCommand  = "task_del"
+	taskListCommand = "tast_list"
 )
 
 var ctx *context.MultiBotContext
@@ -29,8 +36,9 @@ func GetDescription() string {
 // GetCommands return plugin commands for bot
 func GetCommands() []string {
 	return []string{
-		"add_task",
-		"del_task",
+		taskAddCommand,
+		taskDelCommand,
+		taskListCommand,
 	}
 }
 
@@ -42,29 +50,36 @@ func UpdateHandler(update tgbotapi.Update) (err error) {
 // RunCommand handler start if bot get one of commands
 func RunCommand(command string, update tgbotapi.Update) (err error) {
 	switch command {
-	case "add_task":
+	case taskAddCommand:
 		addTask(update.Message)
-	case "del_task":
+	case taskDelCommand:
 		delTask(update.Message)
+	case taskListCommand:
+		listTask(update.Message)
 	}
 	return
 }
 
 // StartCommand handler start if bot get one command 'start'
 func StartCommand(update tgbotapi.Update) (err error) {
-	msg := `Привет!
-Тебя приветствует плагин "Напоминатель"
-Для добавления задачи отправь команду /add_task.
-Для удаления уже созданной задачи отправь команду /del_task.
-Приятного пользования "Напоминателем"!`
+	pluginName := GetName()
+	msg := fmt.Sprintf(`Тебя приветствует плагин "Напоминатель"
+Для добавления задачи отправь команду /%s_%s.
+Для удаления уже созданной задачи отправь команду /%s_%s.
+Для вывода списка задач отправь команду /%s_%s.
+Приятного пользования "Напоминателем"!`, pluginName, taskAddCommand, pluginName, taskDelCommand, pluginName, taskListCommand)
 	ctx.SendMessageText(update.Message.Chat.ID, msg, 0)
 	return
 }
 
 func addTask(msg *tgbotapi.Message) {
-	log.Infof("send command \"add_task\"")
+	log.Infof("send command \"%s\"", taskAddCommand)
 }
 
 func delTask(msg *tgbotapi.Message) {
-	log.Infof("send command \"del_task\"")
+	log.Infof("send command \"%s\"", taskDelCommand)
+}
+
+func listTask(msg *tgbotapi.Message) {
+	log.Infof("send command \"%s\"", taskListCommand)
 }

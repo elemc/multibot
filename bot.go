@@ -3,6 +3,9 @@
 package main
 
 import (
+	"fmt"
+	"strings"
+
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/telegram-bot-api.v4"
 )
@@ -50,13 +53,15 @@ func botEachUpdateHandler(update tgbotapi.Update) {
 func botCommandsHandler(update tgbotapi.Update) {
 	cmd := update.Message.Command()
 	if botPlugin, ok := botPluginsByCommand[cmd]; ok {
-		if err := botPlugin.RunCommandHandler(cmd, update); err != nil {
+		shortCmd := strings.TrimPrefix(cmd, fmt.Sprintf("%s_", botPlugin.Name))
+		if err := botPlugin.RunCommandHandler(shortCmd, update); err != nil {
 			log.Errorf("Unable to run command '%s' for plugin '%s': %s", cmd, botPlugin.Name, err)
 		}
 	}
 }
 
 func botStartHandler(update tgbotapi.Update) {
+	botContext.SendMessageMarkdown(update.Message.Chat.ID, "*Привет!*", 0)
 	for name, botPlugin := range botPlugins {
 		if err := botPlugin.StartCommandHandler(update); err != nil {
 			log.Errorf("Unable to run command start for plugin '%s': %s", name, err)

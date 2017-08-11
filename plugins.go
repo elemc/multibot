@@ -98,11 +98,12 @@ func LoadPlugins() (err error) {
 		botPlugins[botPlugin.Name] = botPlugin
 
 		for _, cmd := range botPlugin.Commands {
-			if pl, ok := botPluginsByCommand[cmd]; ok {
-				return fmt.Errorf("we have command with name %s in plugin %s", cmd, pl.Name)
+			rcmd := fmt.Sprintf("%s_%s", botPlugin.Name, cmd)
+			if pl, ok := botPluginsByCommand[rcmd]; ok {
+				return fmt.Errorf("we have command with name \"%s\" in plugin \"%s\"", rcmd, pl.Name)
 			}
-			botPluginsByCommand[cmd] = botPlugin
-			log.Debugf("Set command %s for plugin %s", cmd, botPlugin.Name)
+			botPluginsByCommand[rcmd] = botPlugin
+			log.Debugf("Set command \"%s\" for plugin \"%s\"", rcmd, botPlugin.Name)
 		}
 
 		log.Debugf("Loaded plugin: %s (%s)", botPlugin.Name, botPlugin.Description)
