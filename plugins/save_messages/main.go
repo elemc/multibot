@@ -66,7 +66,7 @@ func runShowFile(chatID int64) (err error) {
 	if data, err = ioutil.ReadAll(f); err != nil {
 		return
 	}
-	ctx.SendMessageText(chatID, string(data), 0)
+	ctx.SendMessageText(chatID, string(data), 0, nil)
 	return
 }
 

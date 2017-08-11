@@ -70,6 +70,8 @@ func (ctx *MultiBotContext) sendMessage(chatID int64, text string, replyID int, 
 	msg := tgbotapi.NewMessage(chatID, text)
 	if replyMarkup != nil {
 		msg.ReplyMarkup = replyMarkup
+	} else {
+		msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 	}
 	msg.ParseMode = parseMode
 	if replyID != 0 {

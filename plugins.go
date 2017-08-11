@@ -61,9 +61,6 @@ func LoadPlugins() (err error) {
 		if initPlugin, err = p.Lookup("InitPlugin"); err != nil {
 			return
 		}
-		if err = initPlugin.(func(*context.MultiBotContext) error)(botContext); err != nil {
-			return
-		}
 		if getName, err = p.Lookup("GetName"); err != nil {
 			return
 		}
@@ -107,6 +104,10 @@ func LoadPlugins() (err error) {
 
 		// try to get plugins settings
 		loadPLuginConfig(botPlugin.Name)
+
+		if err = initPlugin.(func(*context.MultiBotContext) error)(botContext); err != nil {
+			return
+		}
 		log.Debugf("Loaded plugin: %s (%s)", botPlugin.Name, botPlugin.Description)
 	}
 
