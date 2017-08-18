@@ -47,7 +47,8 @@ func setTimerAndRunJob(task *UserTask) {
 }
 
 func job(t *time.Timer, usertask *UserTask) {
-	if _, ok := <-t.C; ok {
+	if ct, ok := <-t.C; ok {
+		ctx.Log().Warnf("Job run %s for user %d: in time %s", usertask.Name, usertask.ChatID, ct.String())
 		ctx.SendMessageMarkdown(usertask.ChatID, usertask.Text, 0, nil)
 		if usertask.Type != taskTypeOnce {
 			setTimerAndRunJob(usertask)
