@@ -29,6 +29,7 @@ func (ut *UserTask) Save() (err error) {
 		ChatID: ut.ChatID,
 		Name:   ut.Name,
 	}
+	setTimerAndRunJob(ut)
 
 	if err = db.Select(temp); err != nil && err != pg.ErrNoRows {
 		return
@@ -38,7 +39,6 @@ func (ut *UserTask) Save() (err error) {
 	if err = db.Update(ut); err != nil {
 		return
 	}
-	setTimerAndRunJob(ut)
 	return
 }
 
