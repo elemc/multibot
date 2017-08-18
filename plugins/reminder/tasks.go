@@ -89,9 +89,9 @@ func (ut *UserTask) NextRunTime() (t time.Time) {
 		if wdn < 0 {
 			wdn = 6
 		}
-		if wdn == ut.WeekDay {
+		if wdn == ut.WeekDay-1 {
 			day = time.Now().Day()
-		} else if wdn < ut.WeekDay {
+		} else if wdn < ut.WeekDay-1 {
 			day = time.Now().Day() + (ut.WeekDay - wdn)
 		} else {
 			day = time.Now().Day() + (7 - wdn - ut.WeekDay)
