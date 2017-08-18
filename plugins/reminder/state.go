@@ -20,7 +20,14 @@ const (
 	taskAddStateSelectSecond
 	taskAddStateSelectName
 	taskAddStateSelectFinish
+)
 
+const (
+	taskDelStateSelectTask = iota
+	taskDelStateFinish
+)
+
+const (
 	taskTypeOnce    = "Одиночная"
 	taskTypeYearly  = "Ежегодная"
 	taskTypeMonthly = "Ежемесячная"
@@ -52,6 +59,10 @@ const (
 	monthOct = "Октябрь"
 	monthNov = "Ноябрь"
 	monthDec = "Декабрь"
+)
+
+const (
+	globalCancel = "Отмена"
 )
 
 var (
@@ -124,10 +135,10 @@ func getReminderUserStates(ctx *context.MultiBotContext, chatID int64) (rusA, ru
 	if rusA, err = getReminderUserState(ctx, chatID, taskAddCommand); err != nil {
 		return
 	}
-	if rusD, err = getReminderUserState(ctx, chatID, taskAddCommand); err != nil {
+	if rusD, err = getReminderUserState(ctx, chatID, taskDelCommand); err != nil {
 		return
 	}
-	if rusL, err = getReminderUserState(ctx, chatID, taskAddCommand); err != nil {
+	if rusL, err = getReminderUserState(ctx, chatID, taskListCommand); err != nil {
 		return
 	}
 	return
@@ -178,4 +189,27 @@ func (rus *ReminderUserState) GetLastDay(ctx *context.MultiBotContext) int {
 	lastDay := bd.AddDate(0, 1, -1).Day()
 	ctx.Log().Debugf("Calculate last month day for %s is %d", bd.String(), lastDay)
 	return lastDay
+}
+
+func deleteUserStates(ctx *context.MultiBotContext, chatID int64) (err error) {
+	if rusA, rusD, rusL, err := getReminderUserStates(ctx, chatID); err != nil {
+		ctx.Log().Errorf("Unable to get user states: %s", err)
+	} else {
+		if rusA != nil {
+			if err = rusA.Del(ctx); err != nil {
+				return err
+			}
+		}
+		if rusD != nil {
+			if err = rusD.Del(ctx); err != nil {
+				return err
+			}
+		}
+		if rusL != nil {
+			if err = rusL.Del(ctx); err != nil {
+				return err
+			}
+		}
+	}
+	return
 }

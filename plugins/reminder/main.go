@@ -70,6 +70,8 @@ func GetCommands() []string {
 // UpdateHandler function call for each update
 func UpdateHandler(update tgbotapi.Update) (err error) {
 	switch update.Message.Text {
+	case globalCancel:
+		sendWelcome(update.Message.Chat.ID, globalCancel)
 	case taskAddKeyboard:
 		addTask(update.Message)
 	case taskDelKeyboard:
@@ -116,6 +118,14 @@ func sendWelcome(chatID int64, msg string) {
 	)
 	rm := tgbotapi.NewReplyKeyboard(row)
 	ctx.SendMessageText(chatID, msg, 0, rm)
+
+	if err := deleteUserStates(ctx, chatID); err != nil {
+		ctx.Log().Errorf("Unable to delete user states: %s", err)
+	}
+}
+
+func sendError(chatID int64) {
+	sendWelcome(chatID, "Ой, что-то пошло не так.")
 }
 
 func addTask(msg *tgbotapi.Message) {
@@ -160,7 +170,29 @@ func addTask(msg *tgbotapi.Message) {
 }
 
 func delTask(msg *tgbotapi.Message) {
-	ctx.Log().Infof("send command \"%s\"", taskDelCommand)
+	var (
+		rus *ReminderUserState
+		err error
+	)
+	if rus, err = getReminderUserState(ctx, msg.Chat.ID, taskDelCommand); err != nil {
+		ctx.Log().WithField("plugin", GetName()).Errorf("Unable to del task: %s", err)
+		return
+	}
+	if rus == nil {
+		rus = initReminderUserState(msg.Chat.ID, taskDelCommand)
+		if err = rus.Save(ctx); err != nil {
+			ctx.Log().WithField("plugin", GetName()).Errorf("Unable to save user state: %s", err)
+			return
+		}
+	}
+	ctx.Log().Debugf("State %d (%d) for chat ID %d and command %s", rus.State, taskAddStateSelectType, rus.ChatID, rus.Command)
+
+	switch rus.State {
+	case taskDelStateSelectTask:
+		sendSelectTasks(msg, "Выберите задачу для удаления:")
+	case taskDelStateFinish:
+		sendWelcome(msg.Chat.ID, "Задача успешно удалена.")
+	}
 }
 
 func listTask(msg *tgbotapi.Message) {
@@ -184,6 +216,7 @@ func sendSelectType(msg *tgbotapi.Message) {
 			counter = 0
 		}
 	}
+	rows = append(rows, []tgbotapi.KeyboardButton{tgbotapi.NewKeyboardButton(globalCancel)})
 
 	rm := tgbotapi.NewReplyKeyboard(rows...)
 	ctx.SendMessageText(msg.Chat.ID, "Выберите тип задачи", 0, rm)
@@ -208,6 +241,7 @@ func sendSelectNum(msg *tgbotapi.Message, query string, begin, end, step int) {
 	if len(buttons) != 0 {
 		rows = append(rows, buttons)
 	}
+	rows = append(rows, []tgbotapi.KeyboardButton{tgbotapi.NewKeyboardButton(globalCancel)})
 
 	rm := tgbotapi.NewReplyKeyboard(rows...)
 	ctx.SendMessageText(msg.Chat.ID, query, 0, rm)
@@ -233,21 +267,43 @@ func sendSelectStringSlice(msg *tgbotapi.Message, query string, ss []string) {
 	if len(buttons) != 0 {
 		rows = append(rows, buttons)
 	}
+	rows = append(rows, []tgbotapi.KeyboardButton{tgbotapi.NewKeyboardButton(globalCancel)})
 
 	rm := tgbotapi.NewReplyKeyboard(rows...)
 	ctx.SendMessageText(msg.Chat.ID, query, 0, rm)
 }
 
+func sendSelectTasks(msg *tgbotapi.Message, query string) {
+	var (
+		err   error
+		tasks []UserTask
+	)
+	if tasks, err = getUserTasks(ctx, msg.Chat.ID); err != nil {
+		ctx.Log().Errorf("Unable to get user tasks: %s", err)
+		sendError(msg.Chat.ID)
+		return
+	}
+	if len(tasks) == 0 {
+		sendWelcome(msg.Chat.ID, "У вас еще нет задач. Попробуйте, сперва создать их.")
+		return
+	}
+	var strTasks []string
+	for _, task := range tasks {
+		strTasks = append(strTasks, fmt.Sprintf("%s", task.String()))
+	}
+	sendSelectStringSlice(msg, query, strTasks)
+}
+
 func getReminderValues(msg *tgbotapi.Message) {
 	var (
-		//rusAdd, rusDel, rusList             *ReminderUserState
-		rusAdd *ReminderUserState
-		err    error
-		//changedAdd, changedDel, changedList bool
-		changedAdd bool
+		rusAdd, rusDel         *ReminderUserState
+		err                    error
+		changedAdd, changedDel bool
 	)
 
-	if rusAdd, _, _, err = getReminderUserStates(ctx, msg.Chat.ID); err != nil {
+	ctx.Log().Debugf("Enter to getReminderValues...")
+
+	if rusAdd, rusDel, _, err = getReminderUserStates(ctx, msg.Chat.ID); err != nil {
 		ctx.Log().WithField("plugin", GetName()).Errorf("Unable to get reminder states: %s", err)
 		return
 	}
@@ -288,6 +344,24 @@ func getReminderValues(msg *tgbotapi.Message) {
 			return
 		}
 	}
+	if rusDel != nil {
+		var ut *UserTask
+		if ut, err = getTaskByString(ctx, msg.Chat.ID, msg.Text); err != nil {
+			ctx.Log().Errorf("Unable to get user tasks: %s", err)
+			sendError(msg.Chat.ID)
+			return
+		} else if ut == nil {
+			ctx.SendMessageMarkdown(msg.Chat.ID, "Такой задачи не найдено!", msg.MessageID, nil)
+			return
+		}
+		if err = ut.Delete(ctx); err != nil {
+			ctx.Log().Errorf("Unable to delete user tasks: %s", err)
+			sendError(msg.Chat.ID)
+			return
+		}
+		rusDel.State = taskDelStateFinish
+		changedDel = true
+	}
 
 	if changedAdd {
 		if err = rusAdd.Save(ctx); err != nil {
@@ -295,6 +369,14 @@ func getReminderValues(msg *tgbotapi.Message) {
 			return
 		}
 		addTask(msg)
+		return
+	}
+	if changedDel {
+		if err = rusDel.Save(ctx); err != nil {
+			ctx.Log().WithField("plugin", GetName()).Errorf("Unable to save user state: %s", err)
+			return
+		}
+		delTask(msg)
 		return
 	}
 }
