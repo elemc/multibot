@@ -96,7 +96,7 @@ func (ut *UserTask) NextRunTime() (t time.Time) {
 		} else if wdn < ut.WeekDay {
 			day = time.Now().Day() + (ut.WeekDay - wdn)
 		} else {
-			day = time.Now().Day() + (7 - wdn - ut.WeekDay)
+			day = time.Now().Day() + (7 - (wdn - ut.WeekDay))
 		}
 		t = time.Date(time.Now().Year(), time.Now().Month(), day, ut.Hour, ut.Minute, ut.Second, 0, time.Local)
 		if t.Before(time.Now()) {
