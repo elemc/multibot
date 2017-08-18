@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"multibot/context"
 	"strconv"
+	"strings"
 	"time"
 
 	"gopkg.in/telegram-bot-api.v4"
@@ -196,7 +197,26 @@ func delTask(msg *tgbotapi.Message) {
 }
 
 func listTask(msg *tgbotapi.Message) {
-	ctx.Log().Infof("send command \"%s\"", taskListCommand)
+	var (
+		lines []string
+		tasks []UserTask
+		err   error
+	)
+	if tasks, err = getUserTasks(ctx, msg.Chat.ID); err != nil {
+		ctx.Log().Errorf("Unable to get user tasks: %s", err)
+		sendError(msg.Chat.ID)
+		return
+	}
+	if len(tasks) == 0 {
+		sendWelcome(msg.Chat.ID, "У вас нет задач!")
+		return
+	}
+
+	for _, task := range tasks {
+		lines = append(lines, task.String())
+	}
+
+	ctx.SendMessageMarkdown(msg.Chat.ID, fmt.Sprintf("Ваши задачи:\n%s", strings.Join(lines, "\n")), 0, nil)
 }
 
 func sendSelectType(msg *tgbotapi.Message) {
@@ -303,7 +323,7 @@ func getReminderValues(msg *tgbotapi.Message) {
 
 	ctx.Log().Debugf("Enter to getReminderValues...")
 
-	if rusAdd, rusDel, _, err = getReminderUserStates(ctx, msg.Chat.ID); err != nil {
+	if rusAdd, rusDel, err = getReminderUserStates(ctx, msg.Chat.ID); err != nil {
 		ctx.Log().WithField("plugin", GetName()).Errorf("Unable to get reminder states: %s", err)
 		return
 	}

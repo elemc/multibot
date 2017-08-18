@@ -131,14 +131,11 @@ func getReminderUserState(ctx *context.MultiBotContext, chatID int64, cmd string
 	return
 }
 
-func getReminderUserStates(ctx *context.MultiBotContext, chatID int64) (rusA, rusD, rusL *ReminderUserState, err error) {
+func getReminderUserStates(ctx *context.MultiBotContext, chatID int64) (rusA, rusD *ReminderUserState, err error) {
 	if rusA, err = getReminderUserState(ctx, chatID, taskAddCommand); err != nil {
 		return
 	}
 	if rusD, err = getReminderUserState(ctx, chatID, taskDelCommand); err != nil {
-		return
-	}
-	if rusL, err = getReminderUserState(ctx, chatID, taskListCommand); err != nil {
 		return
 	}
 	return
@@ -192,7 +189,7 @@ func (rus *ReminderUserState) GetLastDay(ctx *context.MultiBotContext) int {
 }
 
 func deleteUserStates(ctx *context.MultiBotContext, chatID int64) (err error) {
-	if rusA, rusD, rusL, err := getReminderUserStates(ctx, chatID); err != nil {
+	if rusA, rusD, err := getReminderUserStates(ctx, chatID); err != nil {
 		ctx.Log().Errorf("Unable to get user states: %s", err)
 	} else {
 		if rusA != nil {
@@ -202,11 +199,6 @@ func deleteUserStates(ctx *context.MultiBotContext, chatID int64) (err error) {
 		}
 		if rusD != nil {
 			if err = rusD.Del(ctx); err != nil {
-				return err
-			}
-		}
-		if rusL != nil {
-			if err = rusL.Del(ctx); err != nil {
 				return err
 			}
 		}
