@@ -85,13 +85,13 @@ func (ut *UserTask) NextRunTime() (t time.Time) {
 		}
 	case taskTypeWeekly:
 		var day int
-		wdn := int(time.Now().Weekday()) - 1
-		if wdn < 0 {
-			wdn = 6
+		wdn := int(time.Now().Weekday())
+		if wdn == 0 {
+			wdn = 7
 		}
-		if wdn == ut.WeekDay-1 {
+		if wdn == ut.WeekDay {
 			day = time.Now().Day()
-		} else if wdn < ut.WeekDay-1 {
+		} else if wdn < ut.WeekDay {
 			day = time.Now().Day() + (ut.WeekDay - wdn)
 		} else {
 			day = time.Now().Day() + (7 - wdn - ut.WeekDay)
