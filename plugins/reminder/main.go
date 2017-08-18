@@ -46,6 +46,10 @@ func InitPlugin(mbc *context.MultiBotContext) error {
 		ctx.Log().Errorf("Unable to create table for reminder user state: %s", err)
 		return err
 	}
+
+	if err := loadTasks(); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -134,13 +138,13 @@ func addTask(msg *tgbotapi.Message) {
 		rus *ReminderUserState
 		err error
 	)
-	if rus, err = getReminderUserState(ctx, msg.Chat.ID, taskAddCommand); err != nil {
+	if rus, err = getReminderUserState(msg.Chat.ID, taskAddCommand); err != nil {
 		ctx.Log().WithField("plugin", GetName()).Errorf("Unable to add task: %s", err)
 		return
 	}
 	if rus == nil {
 		rus = initReminderUserState(msg.Chat.ID, taskAddCommand)
-		if err = rus.Save(ctx); err != nil {
+		if err = rus.Save(); err != nil {
 			ctx.Log().WithField("plugin", GetName()).Errorf("Unable to save user state: %s", err)
 			return
 		}
@@ -154,7 +158,7 @@ func addTask(msg *tgbotapi.Message) {
 	case taskAddStateSelectMonth:
 		sendSelectStringSlice(msg, "Выберите месяц или введите номер месяца:", months)
 	case taskAddStateSelectDay:
-		sendSelectNum(msg, "Введите или выберите день:", 1, rus.GetLastDay(ctx), 1)
+		sendSelectNum(msg, "Введите или выберите день:", 1, rus.GetLastDay(), 1)
 	case taskAddStateSelectHour:
 		sendSelectNum(msg, "Введите или выберите час:", 0, 23, 1)
 	case taskAddStateSelectMinute:
@@ -175,13 +179,13 @@ func delTask(msg *tgbotapi.Message) {
 		rus *ReminderUserState
 		err error
 	)
-	if rus, err = getReminderUserState(ctx, msg.Chat.ID, taskDelCommand); err != nil {
+	if rus, err = getReminderUserState(msg.Chat.ID, taskDelCommand); err != nil {
 		ctx.Log().WithField("plugin", GetName()).Errorf("Unable to del task: %s", err)
 		return
 	}
 	if rus == nil {
 		rus = initReminderUserState(msg.Chat.ID, taskDelCommand)
-		if err = rus.Save(ctx); err != nil {
+		if err = rus.Save(); err != nil {
 			ctx.Log().WithField("plugin", GetName()).Errorf("Unable to save user state: %s", err)
 			return
 		}
@@ -202,7 +206,7 @@ func listTask(msg *tgbotapi.Message) {
 		tasks []UserTask
 		err   error
 	)
-	if tasks, err = getUserTasks(ctx, msg.Chat.ID); err != nil {
+	if tasks, err = getUserTasks(msg.Chat.ID); err != nil {
 		ctx.Log().Errorf("Unable to get user tasks: %s", err)
 		sendError(msg.Chat.ID)
 		return
@@ -298,7 +302,7 @@ func sendSelectTasks(msg *tgbotapi.Message, query string) {
 		err   error
 		tasks []UserTask
 	)
-	if tasks, err = getUserTasks(ctx, msg.Chat.ID); err != nil {
+	if tasks, err = getUserTasks(msg.Chat.ID); err != nil {
 		ctx.Log().Errorf("Unable to get user tasks: %s", err)
 		sendError(msg.Chat.ID)
 		return
@@ -323,7 +327,7 @@ func getReminderValues(msg *tgbotapi.Message) {
 
 	ctx.Log().Debugf("Enter to getReminderValues...")
 
-	if rusAdd, rusDel, err = getReminderUserStates(ctx, msg.Chat.ID); err != nil {
+	if rusAdd, rusDel, err = getReminderUserStates(msg.Chat.ID); err != nil {
 		ctx.Log().WithField("plugin", GetName()).Errorf("Unable to get reminder states: %s", err)
 		return
 	}
@@ -366,7 +370,7 @@ func getReminderValues(msg *tgbotapi.Message) {
 	}
 	if rusDel != nil {
 		var ut *UserTask
-		if ut, err = getTaskByString(ctx, msg.Chat.ID, msg.Text); err != nil {
+		if ut, err = getTaskByString(msg.Chat.ID, msg.Text); err != nil {
 			ctx.Log().Errorf("Unable to get user tasks: %s", err)
 			sendError(msg.Chat.ID)
 			return
@@ -374,7 +378,7 @@ func getReminderValues(msg *tgbotapi.Message) {
 			ctx.SendMessageMarkdown(msg.Chat.ID, "Такой задачи не найдено!", msg.MessageID, nil)
 			return
 		}
-		if err = ut.Delete(ctx); err != nil {
+		if err = ut.Delete(); err != nil {
 			ctx.Log().Errorf("Unable to delete user tasks: %s", err)
 			sendError(msg.Chat.ID)
 			return
@@ -384,7 +388,7 @@ func getReminderValues(msg *tgbotapi.Message) {
 	}
 
 	if changedAdd {
-		if err = rusAdd.Save(ctx); err != nil {
+		if err = rusAdd.Save(); err != nil {
 			ctx.Log().WithField("plugin", GetName()).Errorf("Unable to save user state: %s", err)
 			return
 		}
@@ -392,7 +396,7 @@ func getReminderValues(msg *tgbotapi.Message) {
 		return
 	}
 	if changedDel {
-		if err = rusDel.Save(ctx); err != nil {
+		if err = rusDel.Save(); err != nil {
 			ctx.Log().WithField("plugin", GetName()).Errorf("Unable to save user state: %s", err)
 			return
 		}
@@ -427,11 +431,11 @@ func getReminderTextNotNum(text string, rus *ReminderUserState, msg *tgbotapi.Me
 	case taskAddStateSelectFinish:
 		rus.Text = text
 		task := rus.ToUserTask()
-		if err := rus.Del(ctx); err != nil {
+		if err := rus.Delete(); err != nil {
 			ctx.Log().Errorf("Unable to delete user state: %s", err)
 			return
 		}
-		if err := task.Save(ctx); err != nil {
+		if err := task.Save(); err != nil {
 			ctx.Log().Errorf("Unable to save user task: %s", err)
 			return
 		}
@@ -444,7 +448,7 @@ func getReminderTextNotNum(text string, rus *ReminderUserState, msg *tgbotapi.Me
 		return
 	}
 
-	if err := rus.Save(ctx); err != nil {
+	if err := rus.Save(); err != nil {
 		ctx.Log().Errorf("Unable to save user status: %s", err)
 		return
 	}
@@ -466,7 +470,7 @@ func getReminderTextNum(num int, rus *ReminderUserState, msg *tgbotapi.Message) 
 			rus.State = taskAddStateSelectDay
 		}
 	case taskAddStateSelectDay:
-		lastDay := rus.GetLastDay(ctx)
+		lastDay := rus.GetLastDay()
 		if num < 0 || num > lastDay {
 			valid = false
 		} else {
@@ -501,7 +505,7 @@ func getReminderTextNum(num int, rus *ReminderUserState, msg *tgbotapi.Message) 
 		return
 	}
 
-	if err := rus.Save(ctx); err != nil {
+	if err := rus.Save(); err != nil {
 		ctx.Log().Errorf("Unable to save user status: %s", err)
 		return
 	}

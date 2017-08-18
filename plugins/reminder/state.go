@@ -100,7 +100,7 @@ func initReminderUserState(chatID int64, cmd string) (rus *ReminderUserState) {
 }
 
 // Save function store user state to database
-func (rus *ReminderUserState) Save(ctx *context.MultiBotContext) (err error) {
+func (rus *ReminderUserState) Save() (err error) {
 	db := ctx.GetDB()
 	temp := &ReminderUserState{
 		ChatID:  rus.ChatID,
@@ -117,7 +117,7 @@ func (rus *ReminderUserState) Save(ctx *context.MultiBotContext) (err error) {
 }
 
 // getReminderUserState function return user state from database
-func getReminderUserState(ctx *context.MultiBotContext, chatID int64, cmd string) (rus *ReminderUserState, err error) {
+func getReminderUserState(chatID int64, cmd string) (rus *ReminderUserState, err error) {
 	rus = initReminderUserState(chatID, cmd)
 	if err = ctx.GetDB().Select(rus); err != nil && err == pg.ErrNoRows {
 		return nil, nil
@@ -131,18 +131,18 @@ func getReminderUserState(ctx *context.MultiBotContext, chatID int64, cmd string
 	return
 }
 
-func getReminderUserStates(ctx *context.MultiBotContext, chatID int64) (rusA, rusD *ReminderUserState, err error) {
-	if rusA, err = getReminderUserState(ctx, chatID, taskAddCommand); err != nil {
+func getReminderUserStates(chatID int64) (rusA, rusD *ReminderUserState, err error) {
+	if rusA, err = getReminderUserState(chatID, taskAddCommand); err != nil {
 		return
 	}
-	if rusD, err = getReminderUserState(ctx, chatID, taskDelCommand); err != nil {
+	if rusD, err = getReminderUserState(chatID, taskDelCommand); err != nil {
 		return
 	}
 	return
 }
 
-// Del function remove user state from database after timeout or complete command
-func (rus *ReminderUserState) Del(ctx *context.MultiBotContext) (err error) {
+// Delete function remove user state from database after timeout or complete command
+func (rus *ReminderUserState) Delete() (err error) {
 	err = ctx.GetDB().Delete(rus)
 	return
 }
@@ -166,7 +166,7 @@ func (rus *ReminderUserState) ToUserTask() (ut *UserTask) {
 }
 
 // GetLastDay function return last day of a month in year
-func (rus *ReminderUserState) GetLastDay(ctx *context.MultiBotContext) int {
+func (rus *ReminderUserState) GetLastDay() int {
 	var (
 		bd    time.Time
 		year  int
@@ -189,16 +189,16 @@ func (rus *ReminderUserState) GetLastDay(ctx *context.MultiBotContext) int {
 }
 
 func deleteUserStates(ctx *context.MultiBotContext, chatID int64) (err error) {
-	if rusA, rusD, err := getReminderUserStates(ctx, chatID); err != nil {
+	if rusA, rusD, err := getReminderUserStates(chatID); err != nil {
 		ctx.Log().Errorf("Unable to get user states: %s", err)
 	} else {
 		if rusA != nil {
-			if err = rusA.Del(ctx); err != nil {
+			if err = rusA.Delete(); err != nil {
 				return err
 			}
 		}
 		if rusD != nil {
-			if err = rusD.Del(ctx); err != nil {
+			if err = rusD.Delete(); err != nil {
 				return err
 			}
 		}
