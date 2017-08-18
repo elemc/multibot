@@ -53,6 +53,7 @@ func (ut *UserTask) Delete() (err error) {
 	defer timers.mutex.Unlock()
 
 	if t, ok := timers.timers[taskID]; ok {
+		ctx.Log().Debugf("Worker '%s' stopped by deleting task.", ut.Name)
 		t.Stop()
 	} else {
 		ctx.Log().Warnf("Not found timer for chat ID %d and name %s", ut.ChatID, ut.Name)
