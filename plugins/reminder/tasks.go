@@ -64,7 +64,9 @@ func (ut *UserTask) Delete() (err error) {
 
 // GetTimer function return time from user task
 func (ut *UserTask) GetTimer() (t *time.Timer) {
-	t = time.NewTimer(time.Until(ut.NextRunTime()))
+	duration := time.Until(ut.NextRunTime())
+	ctx.Log().Debugf("Duration set for timer: %s", duration.String())
+	t = time.NewTimer(duration)
 	return
 }
 
