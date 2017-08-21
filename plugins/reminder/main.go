@@ -515,3 +515,23 @@ func getReminderTextNum(num int, rus *ReminderUserState, msg *tgbotapi.Message) 
 	}
 	addTask(msg)
 }
+
+func getLastDay(year, month int) int {
+	var (
+		bd  time.Time
+		err error
+	)
+	if year == 0 {
+		year = time.Now().Year()
+	}
+	if month == 0 {
+		month = 1
+	}
+	if bd, err = time.Parse("2006.01.02", fmt.Sprintf("%04d.%02d.%02d", year, month, 1)); err != nil {
+		ctx.Log().Errorf("Unable to parse date %04d-%02d-%02d: %s", year, month, 1, err)
+		return 0
+	}
+	lastDay := bd.AddDate(0, 1, -1).Day()
+	return lastDay
+
+}

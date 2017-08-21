@@ -81,9 +81,27 @@ func (ut *UserTask) NextRunTime() (t time.Time) {
 			t = t.AddDate(1, 0, 0)
 		}
 	case taskTypeMonthly:
-		t = time.Date(time.Now().Year(), time.Now().Month(), ut.Day, ut.Hour, ut.Minute, ut.Second, 0, time.Local)
+		day := ut.Day
+		lastDay := getLastDay(time.Now().Year(), int(time.Now().Month()))
+		if day > lastDay {
+			day = lastDay
+		}
+		t = time.Date(time.Now().Year(), time.Now().Month(), day, ut.Hour, ut.Minute, ut.Second, 0, time.Local)
 		if t.Before(time.Now()) {
-			t = t.AddDate(0, 1, 0)
+			day := ut.Day
+			month := int(time.Now().Month())
+			year := time.Now().Year()
+			if month == 12 {
+				year++
+				month = 1
+			} else {
+				month++
+			}
+			lastDay := getLastDay(year, month)
+			if day > lastDay {
+				day = lastDay
+			}
+			t = time.Date(year, time.Month(month), day, ut.Hour, ut.Minute, ut.Second, 0, time.Local)
 		}
 	case taskTypeWeekly:
 		var day int

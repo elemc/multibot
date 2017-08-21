@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"multibot/context"
 	"time"
 
@@ -167,25 +166,7 @@ func (rus *ReminderUserState) ToUserTask() (ut *UserTask) {
 
 // GetLastDay function return last day of a month in year
 func (rus *ReminderUserState) GetLastDay() int {
-	var (
-		bd    time.Time
-		year  int
-		month int
-		err   error
-	)
-	if year = rus.Year; year == 0 {
-		year = time.Now().Year()
-	}
-	if month = rus.Month; month == 0 {
-		month = 1
-	}
-	if bd, err = time.Parse("2006.01.02", fmt.Sprintf("%d.%02d.%02d", year, month, 1)); err != nil {
-		ctx.Log().Errorf("Unable to parse date %d-%02d-%02d: %s", year, month, 1, err)
-		return 0
-	}
-	lastDay := bd.AddDate(0, 1, -1).Day()
-	ctx.Log().Debugf("Calculate last month day for %s is %d", bd.String(), lastDay)
-	return lastDay
+	return getLastDay(rus.Year, rus.Month)
 }
 
 func deleteUserStates(ctx *context.MultiBotContext, chatID int64) (err error) {
