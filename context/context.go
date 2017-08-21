@@ -1,8 +1,11 @@
 package context
 
 import (
+	"io"
 	"io/ioutil"
+	"net/http"
 	"os"
+	"path/filepath"
 
 	"github.com/go-pg/pg"
 	"github.com/go-pg/pg/orm"
@@ -147,5 +150,53 @@ func (ctx *MultiBotContext) GetOptions(pluginName string) map[string]interface{}
 // DBInsert insert data to database
 func (ctx *MultiBotContext) DBInsert(data interface{}) (err error) {
 	err = ctx.db.Insert(data)
+	return
+}
+
+// GetFile function download file from telegram and store in 'filename'
+func (ctx *MultiBotContext) GetFile(fileID, dir string) (filename string, err error) {
+	var (
+		botf tgbotapi.File
+		resp *http.Response
+		file *os.File
+	)
+
+	fc := tgbotapi.FileConfig{FileID: fileID}
+	if botf, err = ctx.bot.GetFile(fc); err != nil {
+		log.Errorf("Unable to get file FileID [%s]: %s", fileID, err)
+		return
+	}
+
+	filename = botf.FilePath
+	fullPath := filepath.Join(dir, filename)
+
+	// check directory
+	path := filepath.Dir(fullPath)
+	if err = os.MkdirAll(path, 0755); err != nil {
+		log.Errorf("Unable to make directories for FileID [%s]: %s", fileID, err)
+		return
+	}
+
+	link := botf.Link(ctx.options.APIKey)
+	if resp, err = http.Get(link); err != nil {
+		log.Errorf("Unable to get file from [%s]: %s", link, err)
+		if resp.Body != nil {
+			resp.Body.Close()
+		}
+		return
+	}
+	defer resp.Body.Close()
+
+	if file, err = os.Create(fullPath); err != nil {
+		log.Errorf("Unable to create file [%s]: %s", fullPath, err)
+		return
+	}
+	defer file.Close()
+	if _, err = io.Copy(file, resp.Body); err != nil {
+		log.Errorf("Unable to copy data from link %s to file %s: %s", link, fullPath, err)
+		return
+	}
+
+	log.Debugf("File downloaded for FileID [%s] to %s", fileID, fullPath)
 	return
 }
