@@ -105,7 +105,7 @@ func (ut *UserTask) NextRunTime() (t time.Time) {
 	case taskTypeDaily:
 		t = time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), ut.Hour, ut.Minute, ut.Second, 0, time.Local)
 		if t.Before(time.Now()) {
-			t.AddDate(0, 0, 0)
+			t = t.AddDate(0, 0, 1)
 		}
 	case taskTypeHourly:
 		t = time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), time.Now().Hour(), ut.Minute, ut.Second, 0, time.Local)

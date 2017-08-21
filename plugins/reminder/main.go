@@ -168,9 +168,9 @@ func addTask(msg *tgbotapi.Message) {
 	case taskAddStateSelectWeekDay:
 		sendSelectStringSlice(msg, "Выберите месяц или введите номер месяца:", weekDays)
 	case taskAddStateSelectName:
-		ctx.SendMessageText(msg.Chat.ID, "Введите название задачи:", 0, nil)
+		ctx.SendMessageText(msg.Chat.ID, "Введите название задачи:", 0, tgbotapi.NewRemoveKeyboard(true))
 	case taskAddStateSelectFinish:
-		ctx.SendMessageText(msg.Chat.ID, "Введите текст задачи:", 0, nil)
+		ctx.SendMessageText(msg.Chat.ID, "Введите текст задачи:", 0, tgbotapi.NewRemoveKeyboard(true))
 	}
 }
 
@@ -325,11 +325,15 @@ func getReminderValues(msg *tgbotapi.Message) {
 		changedAdd, changedDel bool
 	)
 
-	ctx.Log().Debugf("Enter to getReminderValues...")
-
 	if rusAdd, rusDel, err = getReminderUserStates(msg.Chat.ID); err != nil {
 		ctx.Log().WithField("plugin", GetName()).Errorf("Unable to get reminder states: %s", err)
 		return
+	}
+	if rusAdd == nil {
+		ctx.Log().Debugf("Reminder user state %s for user %d not found", taskAddCommand, msg.Chat.ID)
+	}
+	if rusDel == nil {
+		ctx.Log().Debugf("Reminder user state %s for user %d not found", taskDelCommand, msg.Chat.ID)
 	}
 
 	if rusAdd != nil {
