@@ -29,7 +29,7 @@ func (ut *UserTask) Save() (err error) {
 		ChatID: ut.ChatID,
 		Name:   ut.Name,
 	}
-	setTimerAndRunJob(ut)
+	setTimerAndRunJob(*ut)
 
 	if err = db.Select(temp); err != nil && err != pg.ErrNoRows {
 		return
@@ -55,6 +55,7 @@ func (ut *UserTask) Delete() (err error) {
 	if t, ok := timers.timers[taskID]; ok {
 		ctx.Log().Debugf("Worker '%s' stopped by deleting task.", ut.Name)
 		t.Stop()
+		delete(timers.timers, taskID)
 	} else {
 		ctx.Log().Warnf("Not found timer for chat ID %d and name %s", ut.ChatID, ut.Name)
 	}

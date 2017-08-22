@@ -30,12 +30,12 @@ func loadTasks() (err error) {
 	}
 
 	for _, task := range tasks {
-		setTimerAndRunJob(&task)
+		setTimerAndRunJob(task)
 	}
 	return
 }
 
-func setTimerAndRunJob(task *UserTask) {
+func setTimerAndRunJob(task UserTask) {
 	taskID := TaskID{ChatID: task.ChatID, Name: task.Name}
 	timer := task.GetTimer()
 
@@ -46,7 +46,7 @@ func setTimerAndRunJob(task *UserTask) {
 	ctx.Log().Debugf("Load task %s for %d and run on %s", task.Name, task.ChatID, task.NextRunTime().String())
 }
 
-func job(t *time.Timer, usertask *UserTask) {
+func job(t *time.Timer, usertask UserTask) {
 	if ct, ok := <-t.C; ok {
 		ctx.Log().Warnf("Job run %s for user %d: in time %s", usertask.Name, usertask.ChatID, ct.String())
 		ctx.SendMessageMarkdown(usertask.ChatID, usertask.Text, 0, nil)
