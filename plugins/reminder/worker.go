@@ -52,6 +52,11 @@ func job(t *time.Timer, usertask *UserTask) {
 		ctx.SendMessageMarkdown(usertask.ChatID, usertask.Text, 0, nil)
 		if usertask.Type != taskTypeOnce {
 			setTimerAndRunJob(usertask)
+		} else {
+			if err := usertask.Delete(); err != nil {
+				ctx.Log().Errorf("Unable to delete user task '%d:%s'", usertask.ChatID, usertask.Name)
+				return
+			}
 		}
 	}
 }
