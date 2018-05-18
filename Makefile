@@ -9,10 +9,10 @@ multibot: deps
 	@go build
 
 deps:
-	${GO_GET} gopkg.in/telegram-bot-api.v4
-	${GO_GET} github.com/sirupsen/logrus
-	${GO_GET} github.com/spf13/viper
-	${GO_GET} github.com/go-pg/pg
+	@echo "Installing dep..."
+	@$(GO_GET) -u github.com/golang/dep/cmd/dep
+	@echo "Download dependencies..."
+	@dep ensure
 
 subdirs: bin_plugins $(PLUGINS)
 

@@ -1,6 +1,8 @@
-*.toml
+multibot.toml
 multibot
 *.swp
 bin_plugins
 *.so
 qwe.txt
+Gopkg.lock
+vendor
