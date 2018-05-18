@@ -14,7 +14,7 @@ var (
 	ctx                *context.MultiBotContext
 	options            map[string]interface{}
 	filesDir           string
-	secretPhraseLength int
+	secretPhraseLength int64
 )
 
 // InitPlugin initialize plugin if it needed
@@ -25,7 +25,7 @@ func InitPlugin(mbc *context.MultiBotContext) error {
 		filesDir = st.(string)
 	}
 	if st, ok := options["secret_length"]; ok && st != nil {
-		secretPhraseLength = st.(int)
+		secretPhraseLength = st.(int64)
 	}
 	if err := ctx.DBCreateTable(&File{}); err != nil {
 		ctx.Log().Errorf("Unable to create table for files: %s", err)

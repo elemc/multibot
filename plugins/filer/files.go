@@ -45,7 +45,7 @@ func (f *File) Upload() (err error) {
 func (f *File) generateNewSecretPhrase() {
 	var buf bytes.Buffer
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	for i := 0; i < secretPhraseLength; i++ {
+	for i := int64(0); i < secretPhraseLength; i++ {
 		b := byte(r.Intn(93)) + 33
 		buf.WriteByte(b)
 	}
